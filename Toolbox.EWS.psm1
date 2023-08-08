@@ -4,6 +4,8 @@ $ewsDLL = 'C:\Program Files\Microsoft\Exchange\Web Services\2.2\Microsoft.Exchan
 $ExchangeVersion = 'Exchange2013_SP1'
 $azureClientId = $env:AZURE_CLIENT_ID
 $azureTenantId = $env:AZURE_TENANT_ID
+$azureClientSecret = $env:AZURE_CLIENT_SECRET | 
+ConvertTo-SecureString -AsPlainText -Force
 
 try {
     try {
@@ -17,6 +19,9 @@ try {
     }
     if (-not $azureTenantId) {
         throw 'Azure Tenant ID is required'
+    }
+    if (-not $azureClientSecret) {
+        throw 'Azure Client Secret is required'
     }
 }
 catch {
@@ -125,12 +130,11 @@ Function New-EwsServiceHC {
         $Service.UseDefaultCredentials = $false
         try {
             $msalParams = @{
-                ClientId              = $azureClientId
-                TenantId              = $azureTenantId
-                IntegratedWindowsAuth = $true
-                Scopes                = "https://outlook.office.com/EWS.AccessAsUser.All"
+                ClientId     = $azureClientId
+                TenantId     = $azureTenantId
+                ClientSecret = $azureClientSecret
             }
-            $token = Get-MsalToken @msalParams 
+            $token = Get-MsalToken @msalParams
             $Service.Credentials = [Microsoft.Exchange.WebServices.Data.OAuthCredentials]$token.AccessToken
         }
         Catch {
@@ -472,12 +476,12 @@ Function Set-EWScredentialsSilentlyHC {
         
     Try {
         $msalParams = @{
-            ClientId = $azureClientId
-            TenantId = $azureTenantId
-            Silent   = $true
-            Scopes   = "https://outlook.office.com/EWS.AccessAsUser.All"
+            ClientId     = $azureClientId
+            TenantId     = $azureTenantId
+            ClientSecret = $azureClientSecret
         }
         $token = Get-MsalToken @msalParams
+        
         # Write-Verbose "Set access token '$($token.AccessToken)'"
         $Service.Credentials = [Microsoft.Exchange.WebServices.Data.OAuthCredentials]$token.AccessToken
     }
